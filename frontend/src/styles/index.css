@@ -1,0 +1,36 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color: #1d2b2a;
+    background:
+      radial-gradient(circle at top left, rgba(240, 106, 78, 0.16), transparent 25%),
+      radial-gradient(circle at top right, rgba(31, 77, 70, 0.16), transparent 18%),
+      #f6f1e8;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-canvas font-sans text-ink antialiased;
+    font-family: 'Roboto', sans-serif;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-bold tracking-tight;
+    font-family: 'Roboto', sans-serif;
+  }
+
+  a {
+    @apply transition;
+  }
+}

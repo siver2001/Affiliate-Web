@@ -1,0 +1,54 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --canvas: #fcfaf7;
+  --ink: #1a1c1a;
+  --sage: #4a6741;
+  --sage-light: #f1f4f0;
+  --coral: #d97757;
+  --gold: #c5a059;
+}
+
+@layer base {
+  body {
+    @apply bg-[var(--canvas)] text-[var(--ink)] font-sans antialiased;
+  }
+  
+  h1, h2, h3, h4, .font-serif {
+    @apply font-serif;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-sm transition-all duration-500;
+  }
+  
+  .premium-button {
+    @apply relative overflow-hidden px-6 py-3 rounded-full font-medium transition-all duration-300
+           bg-[var(--ink)] text-white hover:bg-[var(--sage)] active:scale-95;
+  }
+}
+
+/* Custom Smooth Transitions */
+.sidebar-enter {
+  transform: translateX(-100%);
+}
+.sidebar-enter-active {
+  transform: translateX(0);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Product Grid reveal */
+@keyframes reveal {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-reveal {
+  animation: reveal 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
