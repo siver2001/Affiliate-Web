@@ -1,8 +1,19 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, Search, ShoppingBag, ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, ChevronRight, Menu, Search, Sparkles, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+
 import { getCategories } from "../../services/categories";
+
+function getCategoryAccent(type: string | null | undefined) {
+  return type === "pets"
+    ? "from-[#204e47] to-[#4e9487] text-white"
+    : "from-[#f26a4b] to-[#d89a3d] text-white";
+}
+
+function getCategoryMeta(type: string | null | undefined) {
+  return type === "pets" ? "Pet picks" : "Smart utility";
+}
 
 export function SiteLayout({ children }: { children?: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -13,118 +24,173 @@ export function SiteLayout({ children }: { children?: React.ReactNode }) {
 
   return (
     <div className="min-h-screen selection:bg-sage/20 selection:text-sage">
-      {/* --- SIDEBAR DRAWER --- */}
-      <div 
-        className={`fixed inset-0 z-[100] transition-opacity duration-700 bg-ink/60 backdrop-blur-md ${
-          isSidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+      <div
+        className={`fixed inset-0 z-[100] bg-ink/60 backdrop-blur-md transition-opacity duration-700 ${
+          isSidebarOpen ? "opacity-100" : "pointer-events-none opacity-0"
         }`}
         onClick={closeSidebar}
       />
-      
-      <aside className={`fixed top-0 left-0 bottom-0 z-[101] w-[340px] bg-white shadow-2xl transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] border-r border-ink/5 ${
-        isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-      }`}>
-        <div className="flex flex-col h-full p-10">
-          <div className="flex items-center justify-between mb-16">
-            <h3 className="text-3xl font-serif">Khám phá</h3>
-            <button onClick={closeSidebar} className="p-3 -mr-3 hover:bg-canvas rounded-full transition-all">
-              <X size={24} />
+
+      <aside
+        className={`fixed bottom-0 left-0 top-0 z-[101] w-[350px] border-r border-white/10 bg-[linear-gradient(180deg,#f7f4ee_0%,#ffffff_24%,#f7f8f8_100%)] shadow-2xl transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        <div className="relative flex h-full flex-col overflow-hidden p-8">
+          <div className="absolute left-0 top-0 h-64 w-64 rounded-full bg-[#2f7468]/12 blur-3xl" />
+          <div className="absolute bottom-8 right-0 h-52 w-52 rounded-full bg-[#f26a4b]/12 blur-3xl" />
+
+          <div className="relative z-10 flex items-center justify-between">
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.35em] text-ink/35">Category drawer</p>
+              <h3 className="mt-3 font-serif text-3xl text-ink">Chon nhanh danh muc</h3>
+            </div>
+            <button className="rounded-full border border-ink/8 p-3 transition-all hover:bg-white" onClick={closeSidebar}>
+              <X size={22} />
             </button>
           </div>
-          
-          <nav className="flex-1 space-y-3 overflow-y-auto pr-2 custom-scrollbar">
-            <Link 
-              to="/" 
-              onClick={closeSidebar}
-              className={`group flex items-center justify-between p-5 rounded-3xl transition-all duration-300 ${
-                location.pathname === "/" ? "bg-sage text-white shadow-lg shadow-sage/20" : "hover:bg-canvas text-ink/70"
+
+          <div className="relative z-10 mt-8 rounded-[2rem] border border-ink/8 bg-white/75 p-5 shadow-[0_18px_50px_rgba(16,24,40,0.08)] backdrop-blur-sm">
+            <div className="flex items-center gap-3">
+              <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#204e47,#3d8779)] text-white">
+                <Sparkles size={16} />
+              </span>
+              <div>
+                <p className="text-sm font-semibold text-ink">Goi y theo ngach</p>
+                <p className="text-xs leading-5 text-ink/50">Mo drawer, chon danh muc, vao thang danh sach can dang bai.</p>
+              </div>
+            </div>
+          </div>
+
+          <nav className="relative z-10 mt-8 flex-1 space-y-3 overflow-y-auto pr-1">
+            <Link
+              className={`group relative block overflow-hidden rounded-[2rem] border px-5 py-5 transition-all duration-500 ${
+                location.pathname === "/"
+                  ? "border-transparent bg-[linear-gradient(135deg,#1e4c45,#2d6e64)] text-white shadow-[0_18px_50px_rgba(31,77,70,0.26)]"
+                  : "border-ink/8 bg-white/80 text-ink/75 hover:-translate-y-0.5 hover:border-ink/15 hover:bg-white"
               }`}
+              onClick={closeSidebar}
+              to="/"
             >
-              <span className="font-semibold tracking-tight">Tất cả sản phẩm</span>
-              <ArrowUpRight size={18} className={`transition-transform duration-300 ${location.pathname === "/" ? "translate-x-1 -translate-y-1" : "opacity-30"}`} />
+              <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-white/10 blur-2xl" />
+              <div className="relative flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.32em] opacity-65">Overview</p>
+                  <p className="mt-2 font-serif text-2xl tracking-tight">Tat ca san pham</p>
+                </div>
+                <div className="rounded-full border border-current/10 p-2 opacity-70 transition-transform duration-300 group-hover:translate-x-1">
+                  <ArrowUpRight size={16} />
+                </div>
+              </div>
             </Link>
-            
-            <div className="pt-8 pb-4 px-4">
-               <span className="text-[10px] uppercase tracking-[0.4em] font-black text-ink/20">Các gian hàng</span>
+
+            <div className="px-2 pt-6">
+              <span className="text-[10px] uppercase tracking-[0.38em] font-bold text-ink/24">Bo suu tap danh muc</span>
             </div>
 
-            {categories?.map((cat) => (
-              <Link 
-                key={cat.id}
-                to={`/category/${cat.slug}`} 
-                onClick={closeSidebar}
-                className={`group flex items-center justify-between px-6 py-5 rounded-[2rem] transition-all duration-500 ${
-                  location.pathname === `/category/${cat.slug}` 
-                    ? "bg-ink text-white shadow-2xl shadow-ink/20 translate-x-2" 
-                    : "hover:bg-canvas text-ink/60 hover:text-ink hover:translate-x-1"
-                }`}
-              >
-                <div className="flex flex-col">
-                  <span className="text-lg font-serif tracking-tight">{cat.name}</span>
-                  <span className={`text-[10px] mt-0.5 opacity-40 group-hover:opacity-100 transition-opacity`}>
-                    {cat.description || "Danh mục chọn lọc"}
-                  </span>
-                </div>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-500 ${
-                  location.pathname.includes(cat.slug) ? "bg-white/10" : "bg-ink/5 opacity-0 group-hover:opacity-100"
-                }`}>
-                  <ArrowUpRight size={14} />
-                </div>
-              </Link>
-            ))}
+            {categories?.map((cat, index) => {
+              const isActive = location.pathname === `/category/${cat.slug}`;
+              return (
+                <Link
+                  className={`group relative block overflow-hidden rounded-[2rem] border px-5 py-5 transition-all duration-500 ${
+                    isActive
+                      ? `border-transparent bg-gradient-to-br ${getCategoryAccent(cat.type)} shadow-[0_20px_55px_rgba(15,23,42,0.16)]`
+                      : "border-ink/8 bg-white/82 text-ink/75 hover:-translate-y-0.5 hover:border-ink/15 hover:bg-white"
+                  }`}
+                  key={cat.id}
+                  onClick={closeSidebar}
+                  style={{ animationDelay: `${index * 60}ms` }}
+                  to={`/category/${cat.slug}`}
+                >
+                  <div
+                    className={`absolute inset-y-0 right-0 w-24 bg-gradient-to-l ${
+                      isActive ? "from-white/18 to-transparent" : "from-ink/0 to-transparent"
+                    }`}
+                  />
+                  <div className="relative flex items-center justify-between gap-4">
+                    <div className="min-w-0">
+                      <span
+                        className={`inline-flex rounded-full px-2.5 py-1 text-[10px] uppercase tracking-[0.26em] ${
+                          isActive ? "bg-white/14 text-white/80" : "bg-ink/5 text-ink/38"
+                        }`}
+                      >
+                        {getCategoryMeta(cat.type)}
+                      </span>
+                      <p className={`mt-3 font-serif text-2xl leading-none ${isActive ? "text-white" : "text-ink"}`}>
+                        {cat.name}
+                      </p>
+                      <p
+                        className={`mt-3 line-clamp-2 text-xs leading-5 ${
+                          isActive ? "text-white/72" : "text-ink/48"
+                        }`}
+                      >
+                        {cat.description || "Danh muc chon loc cho bai dang affiliate."}
+                      </p>
+                    </div>
+                    <div
+                      className={`flex h-10 w-10 flex-none items-center justify-center rounded-full border transition-all duration-300 ${
+                        isActive
+                          ? "border-white/15 bg-white/10 text-white"
+                          : "border-ink/8 bg-ink/[0.03] text-ink/35 group-hover:translate-x-1 group-hover:text-ink"
+                      }`}
+                    >
+                      <ChevronRight size={18} />
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
           </nav>
 
-          <footer className="mt-12 pt-8 border-t border-ink/5">
-            <Link to="/admin/login" onClick={closeSidebar} className="flex items-center gap-2 group text-[10px] uppercase tracking-[0.25em] font-bold text-ink/30 hover:text-pine transition-all">
-              <span>Hệ thống quản trị</span>
-              <ArrowUpRight size={12} className="opacity-0 group-hover:opacity-100 transition-all" />
+          <footer className="relative z-10 mt-8 border-t border-ink/8 pt-6">
+            <Link
+              className="group inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.25em] font-bold text-ink/34 transition-all hover:text-pine"
+              onClick={closeSidebar}
+              to="/admin/login"
+            >
+              <span>He thong quan tri</span>
+              <ArrowUpRight size={12} className="transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
             </Link>
           </footer>
         </div>
       </aside>
 
-      {/* --- HEADER --- */}
-      <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-ink/5 px-6 lg:px-16 h-24 flex items-center justify-between">
+      <header className="sticky top-0 z-50 flex h-24 items-center justify-between border-b border-ink/5 bg-white/90 px-6 backdrop-blur-xl lg:px-16">
         <div className="flex items-center gap-12">
-          <button 
-            onClick={() => setIsSidebarOpen(true)}
-            className="group flex items-center gap-4 hover:text-sage transition-all"
-          >
-            <div className="flex flex-col gap-1.5 w-6">
-              <span className="h-[1.5px] w-full bg-current rounded-full" />
-              <span className="h-[1.5px] w-2/3 bg-current rounded-full transition-all group-hover:w-full" />
-              <span className="h-[1.5px] w-full bg-current rounded-full" />
+          <button className="group flex items-center gap-4 transition-all hover:text-sage" onClick={() => setIsSidebarOpen(true)}>
+            <div className="flex w-6 flex-col gap-1.5">
+              <span className="h-[1.5px] w-full rounded-full bg-current" />
+              <span className="h-[1.5px] w-2/3 rounded-full bg-current transition-all group-hover:w-full" />
+              <span className="h-[1.5px] w-full rounded-full bg-current" />
             </div>
-            <span className="text-[10px] uppercase tracking-[0.3em] font-bold hidden sm:inline-block">Danh mục</span>
+            <span className="hidden text-[10px] font-bold uppercase tracking-[0.3em] sm:inline-block">Danh muc</span>
           </button>
         </div>
 
-        <Link to="/" className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center group">
-          <span className="font-serif text-3xl lg:text-4xl tracking-tighter leading-none group-hover:italic transition-all">Affiliate Hub.</span>
-          <span className="text-[8px] uppercase tracking-[0.5em] font-bold text-ink/30 mt-1">Prime Selections</span>
+        <Link className="group absolute left-1/2 flex -translate-x-1/2 flex-col items-center" to="/">
+          <span className="font-serif text-3xl tracking-tighter leading-none transition-all group-hover:italic lg:text-4xl">
+            Affiliate Hub.
+          </span>
+          <span className="mt-1 text-[8px] font-bold uppercase tracking-[0.5em] text-ink/30">Prime Selections</span>
         </Link>
-        
+
         <div className="flex items-center gap-6">
-          <button className="p-3 hover:bg-canvas rounded-full transition-all">
-            <Search size={22} className="text-ink/80" />
+          <button className="rounded-full p-3 transition-all hover:bg-canvas">
+            <Search className="text-ink/80" size={22} />
           </button>
         </div>
       </header>
 
-      {/* --- CONTENT --- */}
-      <main className="min-h-screen">
-        {children || <div className="p-12 text-center text-ink/20">Chưa có nội dung.</div>}
-      </main>
+      <main className="min-h-screen">{children || <div className="p-12 text-center text-ink/20">Chua co noi dung.</div>}</main>
 
-      {/* --- FOOTER --- */}
-      <footer className="bg-ink text-white py-8 px-6 lg:px-16 border-t border-white/5">
-        <div className="max-w-[1920px] mx-auto flex flex-col sm:flex-row justify-between items-center gap-6">
-          <p className="text-[10px] uppercase tracking-[0.4em] text-white/20 font-bold">
-            &copy; 2026 Affiliate Hub / Tinh tuyển từ Shopee.
-          </p>
+      <footer className="border-t border-white/5 bg-ink px-6 py-8 text-white lg:px-16">
+        <div className="mx-auto flex max-w-[1920px] flex-col items-center justify-between gap-6 sm:flex-row">
+          <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-white/20">&copy; 2026 Affiliate Hub / Tinh tuyen tu Shopee.</p>
           <div className="flex gap-8">
-             <Link to="/admin/login" className="text-[10px] uppercase tracking-[0.2em] text-white/30 hover:text-white transition-colors font-bold">Admin Portal</Link>
-             <span className="text-[10px] uppercase tracking-[0.2em] text-white/10 font-bold">Terms of quality.</span>
+            <Link className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/30 transition-colors hover:text-white" to="/admin/login">
+              Admin Portal
+            </Link>
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/10">Terms of quality.</span>
           </div>
         </div>
       </footer>

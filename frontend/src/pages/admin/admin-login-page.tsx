@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
-import { LockKeyhole } from "lucide-react";
+import { LockKeyhole, Sparkles } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
@@ -18,6 +18,12 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
+const highlights = [
+  "Cap nhat danh muc va san pham nhanh trong mot man hinh.",
+  "Luu link Shopee, gia va bo anh de chot bai dang de hon.",
+  "Copy san noi dung affiliate de dem di comment Facebook."
+];
+
 export function AdminLoginPage() {
   const navigate = useNavigate();
   const auth = useAuth();
@@ -29,26 +35,53 @@ export function AdminLoginPage() {
     mutationFn: login,
     onSuccess: (data) => {
       auth.login(data.token, data.user);
-      toast.success("Đăng nhập thành công.");
+      toast.success("Dang nhap thanh cong.");
       navigate("/admin/dashboard");
     },
     onError: () => {
-      toast.error("Không đăng nhập được. Kiểm tra lại email hoặc mật khẩu.");
+      toast.error("Khong dang nhap duoc. Kiem tra lai email hoac mat khau.");
     }
   });
 
   return (
     <div className="mx-auto flex min-h-screen max-w-6xl items-center px-4 py-8 sm:px-6">
       <div className="grid w-full overflow-hidden rounded-[2.5rem] border border-ink/10 bg-white shadow-soft lg:grid-cols-[0.95fr,1.05fr]">
-        <div className="bg-[linear-gradient(145deg,#1f4d46,#2d6e64)] p-10 text-white">
-          <p className="text-xs uppercase tracking-[0.25em] text-white/60">Admin auth</p>
-          <h1 className="mt-4 font-serif text-5xl leading-tight">
-            Đăng nhập để chỉnh nội dung, media và link affiliate.
-          </h1>
-          <p className="mt-5 max-w-md text-sm leading-7 text-white/75">
-            Trang đăng nhập này dùng JWT flow đơn giản theo spec. Có thể thay bằng user table
-            trên Prisma và mật khẩu hash khi bạn nối Supabase thật.
-          </p>
+        <div className="relative overflow-hidden bg-[linear-gradient(155deg,#163f39_0%,#21584f_45%,#2f7468_100%)] p-10 text-white">
+          <div className="absolute inset-0 opacity-20">
+            <div className="absolute -left-8 top-10 h-40 w-40 rounded-full bg-white/20 blur-3xl" />
+            <div className="absolute bottom-0 right-0 h-56 w-56 rounded-full bg-[#f26a4b]/25 blur-3xl" />
+            <div className="absolute left-16 top-36 h-px w-40 bg-white/30" />
+            <div className="absolute left-24 top-44 h-px w-24 bg-white/20" />
+          </div>
+
+          <div className="relative z-10">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/8 px-3 py-2 text-[11px] uppercase tracking-[0.32em] text-white/75">
+              <Sparkles size={12} />
+              Admin auth
+            </div>
+            <h1 className="mt-6 max-w-lg font-serif text-5xl leading-[1.08]">
+              Dang nhap de quan ly san pham va dong noi dung ban hang gon, nhanh, de dang.
+            </h1>
+            <p className="mt-6 max-w-md text-sm leading-7 text-white/78">
+              Day la khu vuc de cap nhat gia, anh, danh muc va link affiliate. Moi thay doi duoc gom lai de ban co the
+              len bai va copy noi dung di comment ngay sau khi luu.
+            </p>
+
+            <div className="mt-10 space-y-3">
+              {highlights.map((item, index) => (
+                <div
+                  className="flex items-start gap-3 rounded-[1.7rem] border border-white/10 bg-white/7 px-4 py-4 backdrop-blur-sm"
+                  key={item}
+                  style={{ animationDelay: `${index * 90}ms` }}
+                >
+                  <span className="mt-1 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-white/14 text-[11px] font-bold text-white">
+                    0{index + 1}
+                  </span>
+                  <p className="text-sm leading-6 text-white/80">{item}</p>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
 
         <div className="p-8 sm:p-12">
@@ -57,6 +90,8 @@ export function AdminLoginPage() {
               <LockKeyhole size={24} />
             </div>
             <h2 className="mt-6 font-serif text-4xl">Welcome back</h2>
+            <p className="mt-2 text-sm text-ink/55">Dang nhap de tiep tuc cap nhat gian hang affiliate cua ban.</p>
+
             <form
               autoComplete="off"
               className="mt-8 space-y-5"
@@ -68,7 +103,7 @@ export function AdminLoginPage() {
                 <p className="mt-1 text-xs text-red-500">{form.formState.errors.email?.message}</p>
               </div>
               <div>
-                <label className="mb-2 block text-sm font-medium text-ink/75">Mật khẩu</label>
+                <label className="mb-2 block text-sm font-medium text-ink/75">Mat khau</label>
                 <Input
                   {...form.register("password")}
                   autoComplete="off"
@@ -78,7 +113,7 @@ export function AdminLoginPage() {
                 <p className="mt-1 text-xs text-red-500">{form.formState.errors.password?.message}</p>
               </div>
               <Button className="w-full justify-center" disabled={loginMutation.isPending} type="submit">
-                {loginMutation.isPending ? "Đang đăng nhập..." : "Đăng nhập admin"}
+                {loginMutation.isPending ? "Dang dang nhap..." : "Dang nhap admin"}
               </Button>
             </form>
           </div>
