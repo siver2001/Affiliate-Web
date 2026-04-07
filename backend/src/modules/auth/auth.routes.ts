@@ -1,8 +1,10 @@
 import { Router } from "express";
+import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
 
 import { env } from "../../config/env";
+import { getPrismaClient } from "../../lib/prisma";
 import { requireAuth } from "../../middleware/auth";
 
 const router = Router();
@@ -12,7 +14,7 @@ const loginSchema = z.object({
   password: z.string().min(8)
 });
 
-router.post("/login", (request, response) => {
+router.post("/login", async (request, response) => {
   const parsed = loginSchema.safeParse(request.body);
   if (!parsed.success) {
     return response.status(400).json({
@@ -22,19 +24,40 @@ router.post("/login", (request, response) => {
   }
 
   const { email, password } = parsed.data;
-  if (email !== env.ADMIN_EMAIL || password !== env.ADMIN_PASSWORD) {
+  const prisma = getPrismaClient();
+  let user = await prisma.user.findUnique({ where: { email } });
+
+  if (!user && env.ADMIN_EMAIL && env.ADMIN_PASSWORD) {
+    if (email === env.ADMIN_EMAIL && password === env.ADMIN_PASSWORD) {
+      const passwordHash = await bcrypt.hash(password, 10);
+      user = await prisma.user.create({
+        data: {
+          email,
+          passwordHash,
+          role: "admin"
+        }
+      });
+    }
+  }
+
+  if (!user) {
     return response.status(401).json({ message: "Email or password is incorrect." });
   }
 
-  const token = jwt.sign({ email, role: "admin" }, env.JWT_SECRET, {
+  const isValidPassword = await bcrypt.compare(password, user.passwordHash);
+  if (!isValidPassword) {
+    return response.status(401).json({ message: "Email or password is incorrect." });
+  }
+
+  const token = jwt.sign({ email: user.email, role: user.role }, env.JWT_SECRET, {
     expiresIn: "7d"
   });
 
   return response.json({
     token,
     user: {
-      email,
-      role: "admin"
+      email: user.email,
+      role: user.role
     }
   });
 });

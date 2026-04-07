@@ -13,8 +13,8 @@ const envSchema = z.object({
   SUPABASE_ANON_KEY: z.string().optional(),
   SUPABASE_STORAGE_BUCKET: z.string().default("product-images"),
   FRONTEND_URL: z.string().default("http://localhost:5173"),
-  ADMIN_EMAIL: z.string().email(),
-  ADMIN_PASSWORD: z.string().min(8)
+  ADMIN_EMAIL: z.string().email().optional(),
+  ADMIN_PASSWORD: z.string().min(8).optional()
 });
 
 export const env = envSchema.parse(process.env);
