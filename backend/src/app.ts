@@ -21,17 +21,24 @@ app.use(express.json({ limit: "5mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use("/uploads", express.static(path.resolve(process.cwd(), "uploads")));
 
-app.get("/api/health", (_request, response) => {
-  response.json({
-    status: "ok",
-    mode: "local-fallback-ready"
-  });
+// Health check
+app.get("/api/health", (_req, res) => {
+  res.json({ status: "ok" });
+});
+app.get("/health", (_req, res) => {
+  res.json({ status: "ok" });
 });
 
-app.use("/api/auth", authRouter);
-app.use("/api/categories", categoriesRouter);
-app.use("/api/products", productsRouter);
-app.use("/api/uploads", uploadsRouter);
+// Routes
+const apiRouter = express.Router();
+apiRouter.use("/auth", authRouter);
+apiRouter.use("/products", productsRouter);
+apiRouter.use("/categories", categoriesRouter);
+apiRouter.use("/uploads", uploadsRouter);
+
+// Support both /api prefix (local) and root (Vercel serverless)
+app.use("/api", apiRouter);
+app.use("/", apiRouter);
 
 app.use((_request, response) => {
   response.status(404).json({ message: "Route not found." });
