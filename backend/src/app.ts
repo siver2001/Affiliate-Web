@@ -11,44 +11,31 @@ import { uploadsRouter } from "./modules/uploads/uploads.routes";
 
 export const app = express();
 
-// On Vercel, frontend & backend share the same origin, so we need flexible CORS.
-const allowedOrigins = [
-  env.FRONTEND_URL,
-  "http://localhost:5173",
-  "http://localhost:4000"
-].filter(Boolean);
+// Support Same-Origin on Vercel
+app.use(cors({
+  origin: true,
+  credentials: true
+}));
 
-app.use(
-  cors({
-    origin(origin, callback) {
-      // Allow requests with no origin (same-origin, server-to-server, curl, etc.)
-      if (!origin) return callback(null, true);
-      // Allow any Vercel preview/production URL
-      if (origin.endsWith(".vercel.app") || allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-      return callback(null, true); // permissive for now – tighten later
-    },
-    credentials: true
-  })
-);
 app.use(express.json({ limit: "5mb" }));
 app.use(express.urlencoded({ extended: true }));
 
-// Request logging – helps debug Vercel serverless issues
+// Test connection route - CALL THIS TO CHECK IF SERVER IS LIVE
+app.get("/api/auth/test-conn", (_req, res) => {
+  res.json({ 
+    status: "alive", 
+    time: new Date().toISOString(),
+    env_admin: Boolean(env.ADMIN_EMAIL) 
+  });
+});
+
+// Request logging
 app.use((req, _res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  console.log(`[${req.method}] ${req.url}`);
   next();
 });
-app.use("/uploads", express.static(path.resolve(process.cwd(), "uploads")));
 
-// Health check
-app.get("/api/health", (_req, res) => {
-  res.json({ status: "ok" });
-});
-app.get("/health", (_req, res) => {
-  res.json({ status: "ok" });
-});
+app.use("/uploads", express.static(path.resolve(process.cwd(), "uploads")));
 
 // Routes
 const apiRouter = express.Router();
@@ -57,10 +44,14 @@ apiRouter.use("/products", productsRouter);
 apiRouter.use("/categories", categoriesRouter);
 apiRouter.use("/uploads", uploadsRouter);
 
-// Support both /api prefix (local) and root (Vercel serverless)
 app.use("/api", apiRouter);
-app.use("/", apiRouter);
+
+// Root path handler for Vercel
+app.get("/", (_req, res) => {
+  res.json({ message: "Affiliate Hub API is running" });
+});
 
 app.use((_request, response) => {
   response.status(404).json({ message: "Route not found." });
 });
+
