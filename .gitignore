@@ -18,3 +18,5 @@ frontend/.env
 frontend/.vite/
 backend/generated/
 *.log
+.codex/
+*.tsbuildinfo

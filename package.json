@@ -10,10 +10,13 @@
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:frontend": "npm run dev --workspace frontend",
     "dev:backend": "npm run dev --workspace backend",
-    "build:vercel": "npm run build --workspace frontend",
+    "build:vercel": "npx prisma generate --schema=./backend/prisma/schema.prisma && npm run build --workspace frontend",
     "build": "npx prisma generate --schema=./backend/prisma/schema.prisma && npm run build --workspace frontend && npm run build --workspace backend",
     "typecheck": "npm run typecheck --workspace frontend && npm run typecheck --workspace backend",
     "lint": "npm run lint --workspace frontend && npm run lint --workspace backend"
+  },
+  "prisma": {
+    "seed": "ts-node backend/prisma/seed.ts"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"

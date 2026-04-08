@@ -1,5 +1,3 @@
-import path from "node:path";
-
 import cors from "cors";
 import express from "express";
 
@@ -34,8 +32,6 @@ app.use((req, _res, next) => {
   console.log(`[${req.method}] ${req.url}`);
   next();
 });
-
-app.use("/uploads", express.static(path.resolve(process.cwd(), "uploads")));
 
 // Routes
 const apiRouter = express.Router();

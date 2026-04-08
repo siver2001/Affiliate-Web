@@ -26,7 +26,7 @@ export function AdminMediaPage() {
         <h1 className="font-serif text-4xl">Upload media</h1>
         <p className="mt-3 text-sm leading-7 text-ink/70">
           Endpoint này ưu tiên upload qua backend. Nếu có Supabase env thì sẽ lên Storage,
-          nếu chưa có thì rơi về local uploads để bạn vẫn demo được flow.
+          nếu chưa cấu hình Supabase Storage thì hệ thống sẽ báo rõ để bạn hoàn thiện môi trường production.
         </p>
 
         <label className="mt-8 flex cursor-pointer flex-col items-center justify-center rounded-[2rem] border border-dashed border-ink/15 bg-canvas px-6 py-12 text-center">
@@ -49,7 +49,7 @@ export function AdminMediaPage() {
         <h2 className="font-serif text-4xl">Kết quả upload</h2>
         {uploadedUrl ? (
           <div className="mt-6 space-y-4">
-            <img alt="Uploaded preview" className="aspect-video w-full rounded-[1.5rem] object-cover" src={uploadedUrl.startsWith("/") ? `${import.meta.env.VITE_API_BASE_URL ?? "http://localhost:4000"}${uploadedUrl}` : uploadedUrl} />
+            <img alt="Uploaded preview" className="aspect-video w-full rounded-[1.5rem] object-cover" src={uploadedUrl} />
             <div className="rounded-[1.5rem] bg-canvas p-4">
               <p className="text-xs uppercase tracking-[0.25em] text-ink/45">Image URL</p>
               <p className="mt-2 break-all text-sm text-ink/75">{uploadedUrl}</p>

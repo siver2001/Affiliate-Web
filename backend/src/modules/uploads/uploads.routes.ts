@@ -1,6 +1,3 @@
-import { promises as fs } from "node:fs";
-import path from "node:path";
-
 import { Router } from "express";
 import multer from "multer";
 
@@ -20,43 +17,35 @@ router.post("/image", requireAuth, upload.single("file"), async (request, respon
   const fileName = `${Date.now()}-${safeName}`;
   const supabase = getSupabaseAdmin();
 
-  if (supabase) {
-    const storagePath = `products/${fileName}`;
-    const uploadResult = await supabase.storage
-      .from(env.SUPABASE_STORAGE_BUCKET)
-      .upload(storagePath, request.file.buffer, {
-        contentType: request.file.mimetype,
-        upsert: true
-      });
-
-    if (uploadResult.error) {
-      return response.status(500).json({
-        message: "Supabase upload failed.",
-        details: uploadResult.error.message
-      });
-    }
-
-    const publicUrl = supabase.storage
-      .from(env.SUPABASE_STORAGE_BUCKET)
-      .getPublicUrl(storagePath).data.publicUrl;
-
-    return response.status(201).json({
-      item: {
-        url: publicUrl,
-        storage: "supabase"
-      }
+  if (!supabase) {
+    return response.status(503).json({
+      message: "Supabase Storage is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY."
     });
   }
 
-  const uploadDir = path.resolve(process.cwd(), "uploads");
-  await fs.mkdir(uploadDir, { recursive: true });
-  const targetPath = path.join(uploadDir, fileName);
-  await fs.writeFile(targetPath, request.file.buffer);
+  const storagePath = `products/${fileName}`;
+  const uploadResult = await supabase.storage
+    .from(env.SUPABASE_STORAGE_BUCKET)
+    .upload(storagePath, request.file.buffer, {
+      contentType: request.file.mimetype,
+      upsert: true
+    });
+
+  if (uploadResult.error) {
+    return response.status(500).json({
+      message: "Supabase upload failed.",
+      details: uploadResult.error.message
+    });
+  }
+
+  const publicUrl = supabase.storage
+    .from(env.SUPABASE_STORAGE_BUCKET)
+    .getPublicUrl(storagePath).data.publicUrl;
 
   return response.status(201).json({
     item: {
-      url: `/uploads/${fileName}`,
-      storage: "local"
+      url: publicUrl,
+      storage: "supabase"
     }
   });
 });

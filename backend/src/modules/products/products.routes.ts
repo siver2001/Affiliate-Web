@@ -1,10 +1,10 @@
-import { randomUUID } from "node:crypto";
-
 import { Router } from "express";
+import { Prisma } from "@prisma/client";
 import { z } from "zod";
 
+import { productWithRelationsInclude, serializeProduct } from "../../lib/catalog";
+import { getPrismaClient } from "../../lib/prisma";
 import { requireAuth } from "../../middleware/auth";
-import { store } from "../../lib/store";
 import { slugify } from "../../utils/slugify";
 
 const router = Router();
@@ -52,55 +52,105 @@ function parseBoolean(value: unknown) {
   return undefined;
 }
 
-router.get("/", (request, response) => {
-  const items = store
-    .getProducts({
-      section: typeof request.query.section === "string" ? request.query.section : undefined,
-      categorySlug: typeof request.query.category === "string" ? request.query.category : undefined,
-      search: typeof request.query.search === "string" ? request.query.search : undefined,
-      featured: parseBoolean(request.query.featured),
-      published: parseBoolean(request.query.published)
-    })
-    .sort((left, right) => right.sortOrder - left.sortOrder || right.updatedAt.localeCompare(left.updatedAt))
-    .map((product) => ({
-      ...product,
-      category: store.getCategoryById(product.categoryId)
-    }));
+router.get("/", async (request, response) => {
+  const section = typeof request.query.section === "string" ? request.query.section : undefined;
+  const categorySlug = typeof request.query.category === "string" ? request.query.category : undefined;
+  const search = typeof request.query.search === "string" ? request.query.search : undefined;
+  const featured = parseBoolean(request.query.featured);
+  const published = parseBoolean(request.query.published);
+  const prisma = getPrismaClient();
 
-  return response.json({ items, total: items.length });
+  const where: Prisma.ProductWhereInput = {
+    ...(section || categorySlug
+      ? {
+          category: {
+            is: {
+              ...(section ? { type: section } : {}),
+              ...(categorySlug ? { slug: categorySlug } : {})
+            }
+          }
+        }
+      : {}),
+    ...(typeof featured === "boolean" ? { isFeatured: featured } : {}),
+    ...(typeof published === "boolean" ? { isPublished: published } : {}),
+    ...(search
+      ? {
+          OR: [
+            { name: { contains: search, mode: "insensitive" } },
+            { shortDescription: { contains: search, mode: "insensitive" } },
+            { fullDescription: { contains: search, mode: "insensitive" } },
+            { socialDescription: { contains: search, mode: "insensitive" } },
+            {
+              category: {
+                is: {
+                  name: { contains: search, mode: "insensitive" }
+                }
+              }
+            },
+            {
+              productTags: {
+                some: {
+                  tag: {
+                    name: { contains: search, mode: "insensitive" }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      : {})
+  };
+
+  const items = await prisma.product.findMany({
+    where,
+    include: productWithRelationsInclude,
+    orderBy: [{ sortOrder: "desc" }, { updatedAt: "desc" }]
+  });
+
+  return response.json({ items: items.map(serializeProduct), total: items.length });
 });
 
-router.get("/:slug", (request, response) => {
-  const product = store.getProductBySlug(request.params.slug);
+router.get("/:slug", async (request, response) => {
+  const prisma = getPrismaClient();
+  const product = await prisma.product.findUnique({
+    where: { slug: request.params.slug },
+    include: productWithRelationsInclude
+  });
   if (!product) {
     return response.status(404).json({ message: "Product not found." });
   }
 
-  const category = store.getCategoryById(product.categoryId);
-  const related = store
-    .getProducts({})
-    .filter(
-      (item) =>
-        item.id !== product.id &&
-        (item.categoryId === product.categoryId ||
-          store.getCategoryById(item.categoryId)?.type === category?.type)
-    )
-    .slice(0, 3)
-    .map((item) => ({
-      ...item,
-      category: store.getCategoryById(item.categoryId)
-    }));
+  const related = await prisma.product.findMany({
+    where: {
+      id: {
+        not: product.id
+      },
+      isPublished: true,
+      OR: [
+        { categoryId: product.categoryId },
+        product.category?.type
+          ? {
+              category: {
+                is: {
+                  type: product.category.type
+                }
+              }
+            }
+          : undefined
+      ].filter(Boolean) as Prisma.ProductWhereInput[]
+    },
+    include: productWithRelationsInclude,
+    orderBy: [{ sortOrder: "desc" }, { updatedAt: "desc" }],
+    take: 3
+  });
 
   return response.json({
-    item: {
-      ...product,
-      category
-    },
-    related
+    item: serializeProduct(product),
+    related: related.map(serializeProduct)
   });
 });
 
-router.post("/", requireAuth, (request, response) => {
+router.post("/", requireAuth, async (request, response) => {
   const parsed = productSchema.safeParse(request.body);
   if (!parsed.success) {
     return response.status(400).json({
@@ -109,35 +159,55 @@ router.post("/", requireAuth, (request, response) => {
     });
   }
 
-  const product = store.createProduct({
-    ...parsed.data,
-    slug: slugify(parsed.data.slug || parsed.data.name),
-    fullDescription: parsed.data.fullDescription ?? null,
-    socialDescription: parsed.data.socialDescription ?? null,
-    suitableFor: parsed.data.suitableFor ?? null,
-    pros: parsed.data.pros ?? null,
-    cons: parsed.data.cons ?? null,
-    price: parsed.data.price ?? null,
-    thumbnail: parsed.data.thumbnail ?? null,
-    shopeeUrl: parsed.data.shopeeUrl ?? null,
-    lazadaUrl: parsed.data.lazadaUrl ?? null,
-    images: parsed.data.images.map((image, index) => ({
-      id: randomUUID(),
-      imageUrl: image.imageUrl,
-      altText: image.altText ?? null,
-      sortOrder: image.sortOrder ?? index
-    })),
-    tags: parsed.data.tags.map((tag) => ({
-      id: tag.id ?? randomUUID(),
-      name: tag.name,
-      slug: slugify(tag.slug || tag.name)
-    }))
+  const prisma = getPrismaClient();
+  const product = await prisma.product.create({
+    data: {
+      name: parsed.data.name,
+      slug: slugify(parsed.data.slug || parsed.data.name),
+      shortDescription: parsed.data.shortDescription,
+      fullDescription: parsed.data.fullDescription ?? null,
+      socialDescription: parsed.data.socialDescription ?? null,
+      suitableFor: parsed.data.suitableFor ?? null,
+      pros: parsed.data.pros ?? null,
+      cons: parsed.data.cons ?? null,
+      price: parsed.data.price ?? null,
+      thumbnail: parsed.data.thumbnail ?? null,
+      shopeeUrl: parsed.data.shopeeUrl ?? null,
+      lazadaUrl: parsed.data.lazadaUrl ?? null,
+      isFeatured: parsed.data.isFeatured,
+      isPublished: parsed.data.isPublished,
+      sortOrder: parsed.data.sortOrder,
+      categoryId: parsed.data.categoryId,
+      images: {
+        create: parsed.data.images.map((image, index) => ({
+          imageUrl: image.imageUrl,
+          altText: image.altText ?? null,
+          sortOrder: image.sortOrder ?? index
+        }))
+      },
+      productTags: {
+        create: parsed.data.tags.map((tag) => ({
+          tag: {
+            connectOrCreate: {
+              where: {
+                slug: slugify(tag.slug || tag.name)
+              },
+              create: {
+                name: tag.name,
+                slug: slugify(tag.slug || tag.name)
+              }
+            }
+          }
+        }))
+      }
+    },
+    include: productWithRelationsInclude
   });
 
-  return response.status(201).json({ item: product });
+  return response.status(201).json({ item: serializeProduct(product) });
 });
 
-router.put("/:id", requireAuth, (request, response) => {
+router.put("/:id", requireAuth, async (request, response) => {
   const productId = String(request.params.id);
   const parsed = productSchema.partial().safeParse(request.body);
   if (!parsed.success) {
@@ -148,36 +218,78 @@ router.put("/:id", requireAuth, (request, response) => {
   }
 
   const payload = parsed.data;
-  const product = store.updateProduct(productId, {
-    ...payload,
-    slug: payload.slug ? slugify(payload.slug) : undefined,
-    images: payload.images
-      ? payload.images.map((image, index) => ({
-          id: randomUUID(),
-          imageUrl: image.imageUrl,
-          altText: image.altText ?? null,
-          sortOrder: image.sortOrder ?? index
-        }))
-      : undefined,
-    tags: payload.tags
-      ? payload.tags.map((tag) => ({
-          id: tag.id ?? randomUUID(),
-          name: tag.name,
-          slug: slugify(tag.slug || tag.name)
-        }))
-      : undefined
+  const prisma = getPrismaClient();
+  const existing = await prisma.product.findUnique({
+    where: { id: productId },
+    select: { id: true }
   });
-
-  if (!product) {
+  if (!existing) {
     return response.status(404).json({ message: "Product not found." });
   }
 
-  return response.json({ item: product });
+  const data: Prisma.ProductUpdateInput = {
+    ...(payload.name !== undefined ? { name: payload.name } : {}),
+    ...(payload.slug !== undefined ? { slug: slugify(payload.slug) } : {}),
+    ...(payload.shortDescription !== undefined ? { shortDescription: payload.shortDescription } : {}),
+    ...(payload.fullDescription !== undefined ? { fullDescription: payload.fullDescription ?? null } : {}),
+    ...(payload.socialDescription !== undefined ? { socialDescription: payload.socialDescription ?? null } : {}),
+    ...(payload.suitableFor !== undefined ? { suitableFor: payload.suitableFor ?? null } : {}),
+    ...(payload.pros !== undefined ? { pros: payload.pros ?? null } : {}),
+    ...(payload.cons !== undefined ? { cons: payload.cons ?? null } : {}),
+    ...(payload.price !== undefined ? { price: payload.price ?? null } : {}),
+    ...(payload.thumbnail !== undefined ? { thumbnail: payload.thumbnail ?? null } : {}),
+    ...(payload.shopeeUrl !== undefined ? { shopeeUrl: payload.shopeeUrl ?? null } : {}),
+    ...(payload.lazadaUrl !== undefined ? { lazadaUrl: payload.lazadaUrl ?? null } : {}),
+    ...(payload.isFeatured !== undefined ? { isFeatured: payload.isFeatured } : {}),
+    ...(payload.isPublished !== undefined ? { isPublished: payload.isPublished } : {}),
+    ...(payload.sortOrder !== undefined ? { sortOrder: payload.sortOrder } : {}),
+    ...(payload.categoryId !== undefined ? { category: { connect: { id: payload.categoryId } } } : {})
+  };
+
+  if (payload.images) {
+    data.images = {
+      deleteMany: {},
+      create: payload.images.map((image, index) => ({
+        imageUrl: image.imageUrl,
+        altText: image.altText ?? null,
+        sortOrder: image.sortOrder ?? index
+      }))
+    };
+  }
+
+  if (payload.tags) {
+    data.productTags = {
+      deleteMany: {},
+      create: payload.tags.map((tag) => ({
+        tag: {
+          connectOrCreate: {
+            where: {
+              slug: slugify(tag.slug || tag.name)
+            },
+            create: {
+              name: tag.name,
+              slug: slugify(tag.slug || tag.name)
+            }
+          }
+        }
+      }))
+    };
+  }
+
+  const product = await prisma.product.update({
+    where: { id: productId },
+    data,
+    include: productWithRelationsInclude
+  });
+
+  return response.json({ item: serializeProduct(product) });
 });
 
-router.delete("/:id", requireAuth, (request, response) => {
-  const deleted = store.deleteProduct(String(request.params.id));
-  if (!deleted) {
+router.delete("/:id", requireAuth, async (request, response) => {
+  const deleted = await getPrismaClient().product.deleteMany({
+    where: { id: String(request.params.id) }
+  });
+  if (deleted.count === 0) {
     return response.status(404).json({ message: "Product not found." });
   }
 

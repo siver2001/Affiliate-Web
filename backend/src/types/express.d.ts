@@ -1,4 +1,4 @@
-import type { AuthUser } from "../lib/store";
+import type { AuthUser } from "./auth";
 
 declare global {
   namespace Express {

@@ -22,7 +22,7 @@ export function AboutPage() {
         {[
           "Public app React + Vite + TypeScript, ưu tiên responsive.",
           "Admin nằm chung app, quản lý mô tả, media, link affiliate.",
-          "Backend Express + Prisma + Supabase-ready, có fallback local để demo nhanh."
+          "Backend Express + Prisma + Supabase, ưu tiên dữ liệu thật và luồng triển khai production."
         ].map((item) => (
           <article className="rounded-[2rem] border border-ink/10 bg-white p-6 shadow-soft" key={item}>
             <p className="text-sm leading-7 text-ink/75">{item}</p>

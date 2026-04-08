@@ -1,8 +1,9 @@
 import { Router } from "express";
 import { z } from "zod";
 
+import { getPrismaClient } from "../../lib/prisma";
+import { serializeCategory } from "../../lib/catalog";
 import { requireAuth } from "../../middleware/auth";
-import { store } from "../../lib/store";
 import { slugify } from "../../utils/slugify";
 
 const router = Router();
@@ -15,17 +16,26 @@ const categorySchema = z.object({
   parentId: z.string().nullable().optional()
 });
 
-router.get("/", (_request, response) => {
-  const categories = store.getCategories().map((category) => ({
-    ...category,
-    children: store.getCategories().filter((item) => item.parentId === category.id),
-    productCount: store.getProducts({ categorySlug: category.slug }).length
-  }));
+router.get("/", async (_request, response) => {
+  const prisma = getPrismaClient();
+  const categories = await prisma.category.findMany({
+    include: {
+      children: {
+        orderBy: [{ name: "asc" }]
+      },
+      _count: {
+        select: {
+          products: true
+        }
+      }
+    },
+    orderBy: [{ type: "asc" }, { parentId: "asc" }, { name: "asc" }]
+  });
 
-  return response.json({ items: categories });
+  return response.json({ items: categories.map(serializeCategory) });
 });
 
-router.post("/", requireAuth, (request, response) => {
+router.post("/", requireAuth, async (request, response) => {
   const parsed = categorySchema.safeParse(request.body);
   if (!parsed.success) {
     return response.status(400).json({
@@ -34,17 +44,28 @@ router.post("/", requireAuth, (request, response) => {
     });
   }
 
-  const category = store.createCategory({
-    ...parsed.data,
-    slug: slugify(parsed.data.slug || parsed.data.name),
-    description: parsed.data.description ?? null,
-    parentId: parsed.data.parentId ?? null
+  const prisma = getPrismaClient();
+  const category = await prisma.category.create({
+    data: {
+      ...parsed.data,
+      slug: slugify(parsed.data.slug || parsed.data.name),
+      description: parsed.data.description ?? null,
+      parentId: parsed.data.parentId ?? null
+    },
+    include: {
+      children: true,
+      _count: {
+        select: {
+          products: true
+        }
+      }
+    }
   });
 
-  return response.status(201).json({ item: category });
+  return response.status(201).json({ item: serializeCategory(category) });
 });
 
-router.put("/:id", requireAuth, (request, response) => {
+router.put("/:id", requireAuth, async (request, response) => {
   const categoryId = String(request.params.id);
   const parsed = categorySchema.partial().safeParse(request.body);
   if (!parsed.success) {
@@ -54,24 +75,55 @@ router.put("/:id", requireAuth, (request, response) => {
     });
   }
 
-  const category = store.updateCategory(categoryId, {
-    ...parsed.data,
-    slug: parsed.data.slug ? slugify(parsed.data.slug) : undefined
+  const prisma = getPrismaClient();
+  const exists = await prisma.category.findUnique({
+    where: { id: categoryId },
+    select: { id: true }
   });
-
-  if (!category) {
+  if (!exists) {
     return response.status(404).json({ message: "Category not found." });
   }
 
-  return response.json({ item: category });
+  const category = await prisma.category.update({
+    where: { id: categoryId },
+    data: {
+      ...parsed.data,
+      slug: parsed.data.slug ? slugify(parsed.data.slug) : undefined
+    },
+    include: {
+      children: true,
+      _count: {
+        select: {
+          products: true
+        }
+      }
+    }
+  });
+
+  return response.json({ item: serializeCategory(category) });
 });
 
-router.delete("/:id", requireAuth, (request, response) => {
-  const deleted = store.deleteCategory(String(request.params.id));
-  if (!deleted) {
+router.delete("/:id", requireAuth, async (request, response) => {
+  const categoryId = String(request.params.id);
+  const prisma = getPrismaClient();
+  const childCount = await prisma.category.count({
+    where: { parentId: categoryId }
+  });
+  const productCount = await prisma.product.count({
+    where: { categoryId }
+  });
+
+  if (childCount > 0 || productCount > 0) {
     return response.status(400).json({
-      message: "Unable to delete category. Remove linked products first."
+      message: "Unable to delete category. Remove linked child categories and products first."
     });
+  }
+
+  const deleted = await prisma.category.deleteMany({
+    where: { id: categoryId }
+  });
+  if (deleted.count === 0) {
+    return response.status(404).json({ message: "Category not found." });
   }
 
   return response.status(204).send();
