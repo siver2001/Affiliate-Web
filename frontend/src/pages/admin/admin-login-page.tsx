@@ -19,9 +19,9 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 const highlights = [
-  "Cap nhat danh muc va san pham nhanh trong mot man hinh.",
-  "Luu link Shopee, gia va bo anh de chot bai dang de hon.",
-  "Copy san noi dung affiliate de dem di comment Facebook."
+  "Cập nhật danh mục và sản phẩm nhanh trong một màn hình.",
+  "Lưu link Shopee, giá và bộ ảnh để chốt bài đăng dễ hơn.",
+  "Copy sẵn nội dung affiliate để đem đi comment Facebook."
 ];
 
 export function AdminLoginPage() {
@@ -35,11 +35,11 @@ export function AdminLoginPage() {
     mutationFn: login,
     onSuccess: (data) => {
       auth.login(data.token, data.user);
-      toast.success("Dang nhap thanh cong.");
+      toast.success("Đăng nhập thành công.");
       navigate("/admin/dashboard");
     },
     onError: () => {
-      toast.error("Khong dang nhap duoc. Kiem tra lai email hoac mat khau.");
+      toast.error("Không đăng nhập được. Kiểm tra lại email hoặc mật khẩu.");
     }
   });
 
@@ -60,11 +60,11 @@ export function AdminLoginPage() {
               Admin auth
             </div>
             <h1 className="mt-6 max-w-lg font-serif text-5xl leading-[1.08]">
-              Dang nhap de quan ly san pham va dong noi dung ban hang gon, nhanh, de dang.
+              Đăng nhập để quản lý sản phẩm và dòng nội dung bán hàng gọn, nhanh, dễ dàng.
             </h1>
             <p className="mt-6 max-w-md text-sm leading-7 text-white/78">
-              Day la khu vuc de cap nhat gia, anh, danh muc va link affiliate. Moi thay doi duoc gom lai de ban co the
-              len bai va copy noi dung di comment ngay sau khi luu.
+              Đây là khu vực để cập nhật giá, ảnh, danh mục và link affiliate. Mọi thay đổi được gom lại để bạn có thể
+              lên bài và copy nội dung đi comment ngay sau khi lưu.
             </p>
 
             <div className="mt-10 space-y-3">
@@ -90,7 +90,7 @@ export function AdminLoginPage() {
               <LockKeyhole size={24} />
             </div>
             <h2 className="mt-6 font-serif text-4xl">Welcome back</h2>
-            <p className="mt-2 text-sm text-ink/55">Dang nhap de tiep tuc cap nhat gian hang affiliate cua ban.</p>
+            <p className="mt-2 text-sm text-ink/55">Đăng nhập để tiếp tục cập nhật gian hàng affiliate của bạn.</p>
 
             <form
               autoComplete="off"
@@ -103,7 +103,7 @@ export function AdminLoginPage() {
                 <p className="mt-1 text-xs text-red-500">{form.formState.errors.email?.message}</p>
               </div>
               <div>
-                <label className="mb-2 block text-sm font-medium text-ink/75">Mat khau</label>
+                <label className="mb-2 block text-sm font-medium text-ink/75">Mật khẩu</label>
                 <Input
                   {...form.register("password")}
                   autoComplete="off"
@@ -113,7 +113,7 @@ export function AdminLoginPage() {
                 <p className="mt-1 text-xs text-red-500">{form.formState.errors.password?.message}</p>
               </div>
               <Button className="w-full justify-center" disabled={loginMutation.isPending} type="submit">
-                {loginMutation.isPending ? "Dang dang nhap..." : "Dang nhap admin"}
+                {loginMutation.isPending ? "Đang đăng nhập..." : "Đăng nhập admin"}
               </Button>
             </form>
           </div>
