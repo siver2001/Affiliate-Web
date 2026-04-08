@@ -39,7 +39,14 @@ export function AdminLoginPage() {
       navigate("/admin/dashboard");
     },
     onError: (error: any) => {
-      const message = error.response?.data?.message || "Không đăng nhập được. Kiểm tra lại email hoặc mật khẩu.";
+      let message: string;
+      if (error.code === "ECONNABORTED") {
+        message = "Hết thời gian chờ. Server đang khởi động, vui lòng thử lại.";
+      } else if (!error.response) {
+        message = "Không thể kết nối đến server. Kiểm tra kết nối mạng.";
+      } else {
+        message = error.response?.data?.message || "Không đăng nhập được. Kiểm tra lại email hoặc mật khẩu.";
+      }
       toast.error(message);
     }
   });
