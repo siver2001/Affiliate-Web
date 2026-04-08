@@ -51,12 +51,14 @@ router.post("/login", async (request, response) => {
     }
 
   if (!user) {
-    return response.status(401).json({ message: "Email or password is incorrect." });
+    return response.status(401).json({ 
+      message: "Tài khoản không tồn tại và không khớp với ADMIN_EMAIL/PASSWORD trong thiết lập Vercel." 
+    });
   }
 
   const isValidPassword = await bcrypt.compare(password, user.passwordHash);
   if (!isValidPassword) {
-    return response.status(401).json({ message: "Email or password is incorrect." });
+    return response.status(401).json({ message: "Mật khẩu không chính xác." });
   }
 
   const token = jwt.sign({ email: user.email, role: user.role }, env.JWT_SECRET, {

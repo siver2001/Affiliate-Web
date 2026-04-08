@@ -38,8 +38,9 @@ export function AdminLoginPage() {
       toast.success("Đăng nhập thành công.");
       navigate("/admin/dashboard");
     },
-    onError: () => {
-      toast.error("Không đăng nhập được. Kiểm tra lại email hoặc mật khẩu.");
+    onError: (error: any) => {
+      const message = error.response?.data?.message || "Không đăng nhập được. Kiểm tra lại email hoặc mật khẩu.";
+      toast.error(message);
     }
   });
 
