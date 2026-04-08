@@ -23,22 +23,32 @@ router.post("/login", async (request, response) => {
     });
   }
 
-  const { email, password } = parsed.data;
-  const prisma = getPrismaClient();
-  let user = await prisma.user.findUnique({ where: { email } });
+    const { email: rawEmail, password } = loginSchema.parse(request.body);
+    const email = rawEmail.toLowerCase().trim();
+    const adminEmail = (env.ADMIN_EMAIL || "").toLowerCase().trim();
+    const adminPass = (env.ADMIN_PASSWORD || "");
 
-  if (!user && env.ADMIN_EMAIL && env.ADMIN_PASSWORD) {
-    if (email === env.ADMIN_EMAIL && password === env.ADMIN_PASSWORD) {
-      const passwordHash = await bcrypt.hash(password, 10);
-      user = await prisma.user.create({
-        data: {
-          email,
-          passwordHash,
-          role: "admin"
-        }
-      });
+    const prisma = getPrismaClient();
+    let user = await prisma.user.findUnique({
+      where: { email }
+    });
+
+    // Auto-create admin if not exists and matches env credentials
+    if (!user && adminEmail && adminPass) {
+      if (email === adminEmail && password === adminPass) {
+        const passwordHash = await bcrypt.hash(password, 10);
+        user = await prisma.user.create({
+          data: {
+            email,
+            passwordHash,
+            role: "admin"
+          }
+        });
+      } else {
+        // Log this or return a hint if debugging
+        console.log(`Login attempt for new user ${email} failed: Credentials don't match env.`);
+      }
     }
-  }
 
   if (!user) {
     return response.status(401).json({ message: "Email or password is incorrect." });
