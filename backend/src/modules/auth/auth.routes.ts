@@ -42,53 +42,59 @@ router.post("/login", async (request, response) => {
 
   const { email: rawEmail, password } = parsed.data;
   const email = rawEmail.toLowerCase().trim();
+  
+  // Explicitly trim and lowercase from env to be safe
   const adminEmail = (env.ADMIN_EMAIL || "").toLowerCase().trim();
-  const adminPass = env.ADMIN_PASSWORD || "";
+  const adminPass = (env.ADMIN_PASSWORD || "").trim();
 
-  console.log(`[auth] Attempting login for: ${email}`);
-  console.log(`[auth] Env admin configured: ${Boolean(adminEmail && adminPass)}`);
-
-  // Prefer env-based admin auth so login does not block on database connectivity.
+  console.log(`[auth] Attempting login: [${email}] vs admin: [${adminEmail}]`);
+  
+  // 1. Check Env-based Admin FIRST (Very strict)
+  // If either is empty, it means .env didn't load correctly
   if (adminEmail && adminPass && email === adminEmail && password === adminPass) {
-    console.log("[auth] Env-based admin match – returning token");
+    console.log("[auth] SUCCESS: Admin credentials match from .env");
     return response.json(buildAuthResponse(email, "admin"));
   }
 
-  console.log("[auth] Env admin did not match – trying database lookup");
+  console.log("[auth] FAILED: Admin env match failed. env.ADMIN_EMAIL exists? " + Boolean(adminEmail));
+
 
   let user = null;
-
   try {
     const prisma = getPrismaClient();
-
-    // Race the DB query against a timeout to prevent infinite hangs on serverless cold starts
-    const timeoutMs = 8000;
-    const dbPromise = prisma.user.findUnique({ where: { email } });
-    const timeoutPromise = new Promise<null>((_, reject) =>
-      setTimeout(() => reject(new Error("Database query timed out")), timeoutMs)
-    );
-
-    user = await Promise.race([dbPromise, timeoutPromise]);
-    console.log(`[auth] DB lookup result: ${user ? "found" : "not found"}`);
-  } catch (error) {
-    console.error("[auth] Failed to query user during login.", error);
+    
+    // Set a short timeout for DB direct query to avoid long hangs
+    user = await prisma.user.findUnique({ 
+      where: { email },
+    }).catch(err => {
+      console.error("[auth] Prisma inner error:", err.message);
+      throw err; // Re-throw to be caught by outer try-catch
+    });
+    
+    console.log(`[auth] DB lookup result: ${user ? "User found" : "User NOT found"}`);
+  } catch (error: any) {
+    console.error("[auth] DATABASE CRITICAL ERROR:", error.message);
+    
+    // If DB is dead but user might be trying to log in with admin env, 
+    // tell them their admin credentials didn't match even if DB is down.
     return response.status(503).json({
-      message: "Dich vu dang tam thoi loi. Thu dang nhap lai sau it phut."
+      message: "Kết nối Database thất bại. Nếu bạn là Admin, hãy kiểm tra lại Email/Password trong file .env hoặc Vercel Settings.",
+      error: error.message
     });
   }
 
   if (!user) {
     return response.status(401).json({
-      message: "Tai khoan khong ton tai hoac khong khop voi tai khoan admin da cau hinh."
+      message: "Tài khoản không tồn tại. Lưu ý: Email/Password bạn vừa nhập không khớp với tài khoản Admin mặc định."
     });
   }
 
   const isValidPassword = await bcrypt.compare(password, (user as any).passwordHash);
   if (!isValidPassword) {
-    return response.status(401).json({ message: "Mat khau khong chinh xac." });
+    return response.status(401).json({ message: "Mật khẩu không chính xác." });
   }
 
-  console.log("[auth] DB user password match – returning token");
+  console.log("[auth] DB user password match – SUCCESS");
   return response.json(buildAuthResponse((user as any).email, (user as any).role));
 });
 

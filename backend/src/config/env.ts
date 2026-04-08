@@ -3,9 +3,17 @@ import path from "node:path";
 import { config } from "dotenv";
 import { z } from "zod";
 
-for (const envPath of [path.resolve(process.cwd(), ".env"), path.resolve(process.cwd(), "../.env")]) {
-  config({ path: envPath, override: false });
+// Load .env from various possible locations
+const pathsToTry = [
+  path.resolve(process.cwd(), ".env"),
+  path.resolve(process.cwd(), "..", ".env"),
+  path.resolve(__dirname, "..", "..", "..", ".env")
+];
+
+for (const envPath of pathsToTry) {
+  config({ path: envPath, override: true });
 }
+
 
 const envSchema = z.object({
   PORT: z.coerce.number().default(4000),
