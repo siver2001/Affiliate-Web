@@ -21,4 +21,14 @@ const envSchema = z.object({
   ADMIN_PASSWORD: z.string().min(8).optional()
 });
 
-export const env = envSchema.parse(process.env);
+let parsedEnv: z.infer<typeof envSchema>;
+try {
+  parsedEnv = envSchema.parse(process.env);
+} catch (error) {
+  console.error("[env] ⚠️  Environment variable validation failed:", error);
+  // Fall back to defaults so the server can at least start and return readable errors
+  parsedEnv = envSchema.parse({});
+}
+
+export const env = parsedEnv;
+
