@@ -1,7 +1,11 @@
+import path from "node:path";
+
 import { config } from "dotenv";
 import { z } from "zod";
 
-config({ path: "../.env" });
+for (const envPath of [path.resolve(process.cwd(), ".env"), path.resolve(process.cwd(), "../.env")]) {
+  config({ path: envPath, override: false });
+}
 
 const envSchema = z.object({
   PORT: z.coerce.number().default(4000),
