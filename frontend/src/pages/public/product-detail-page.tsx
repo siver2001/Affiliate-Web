@@ -9,9 +9,9 @@ import { ProductCard } from "../../components/product/product-card";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { buildAffiliateCopyText } from "../../lib/affiliate-copy";
+import { copyProductToClipboard } from "../../lib/clipboard";
 import { formatCurrency } from "../../lib/format";
 import { getProduct } from "../../services/products";
-import { copyProductToClipboard } from "../../lib/clipboard";
 
 export function ProductDetailPage() {
   const { slug = "" } = useParams();
@@ -44,10 +44,8 @@ export function ProductDetailPage() {
   async function handleCopyAffiliate() {
     try {
       const result = await copyProductToClipboard(buildAffiliateCopyText(item), item.thumbnail);
-      if (result === true) {
+      if (result === "text-and-image") {
         toast.success("Đã copy nội dung và ảnh.");
-      } else if (result === "text-plus-url") {
-        toast.info("Đã copy nội dung + link ảnh (không thể copy trực tiếp ảnh).");
       } else {
         toast.success("Đã copy nội dung affiliate.");
       }
@@ -109,7 +107,7 @@ export function ProductDetailPage() {
                 </a>
                 <Button onClick={handleCopyAffiliate} variant="outline">
                   <Copy className="mr-2" size={16} />
-                  Copy nội dung + link
+                  Copy nội dung
                 </Button>
               </>
             ) : null}
