@@ -154,6 +154,40 @@ export function AdminProductFormPage() {
     }
   });
 
+  const handleAutoTag = () => {
+    const currentTags = form.getValues("tagsText")?.trim();
+    if (currentTags) return;
+
+    const name = form.getValues("name");
+    const categoryId = form.getValues("categoryId");
+
+    const tags: string[] = [];
+
+    // Mix in category context
+    const category = categoriesQuery.data?.find((c) => c.id === categoryId);
+    if (category) {
+      if (category.type === "pets") tags.push("pet");
+      if (category.type === "gadgets") tags.push("đời-sống");
+      tags.push(category.name.toLowerCase().replace(/\s+/g, "-"));
+    }
+
+    // Basic keyword extraction from name
+    const words = name
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "") // strip diacritics for clean tags
+      .replace(/[^\w\s]/g, "")
+      .split(/\s+/)
+      .filter((w) => w.length > 3 && !["mang", "chinh", "duoc", "dung", "cho"].includes(w));
+
+    tags.push(...words.slice(0, 3));
+
+    const uniqueTags = Array.from(new Set(tags)).filter(Boolean).join(", ");
+    if (uniqueTags) {
+      form.setValue("tagsText", uniqueTags, { shouldDirty: true });
+    }
+  };
+
   if (categoriesQuery.isLoading || productsQuery.isLoading) {
     return <LoadingBlock label="Đang chuẩn bị form..." />;
   }
@@ -178,7 +212,7 @@ export function AdminProductFormPage() {
           <div className="grid gap-4 md:grid-cols-2">
             <div>
               <label className="mb-2 block text-sm font-medium text-ink/70">Tên sản phẩm</label>
-              <Input {...form.register("name")} />
+              <Input {...form.register("name")} onBlur={handleAutoTag} />
             </div>
             <div>
               <label className="mb-2 block text-sm font-medium text-ink/70">Slug</label>
@@ -191,7 +225,7 @@ export function AdminProductFormPage() {
               <label className="mb-2 block text-sm font-medium text-ink/70">Danh mục</label>
               <select
                 className="w-full rounded-2xl border border-ink/10 bg-white px-4 py-3 text-sm"
-                {...form.register("categoryId")}
+                {...form.register("categoryId", { onChange: handleAutoTag })}
               >
                 <option value="">Chọn danh mục</option>
                 {categoriesQuery.data?.map((category) => (
