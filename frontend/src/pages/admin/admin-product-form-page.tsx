@@ -179,7 +179,6 @@ export function AdminProductFormPage() {
       <div className="flex items-center justify-between rounded-[2rem] border border-ink/10 bg-white p-6 shadow-soft">
         <div>
           <h1 className="font-serif text-4xl">{id ? "Chỉnh sửa sản phẩm" : "Tạo sản phẩm mới"}</h1>
-          <p className="mt-2 text-sm text-ink/70">Form đã được rút gọn chỉ giữ các trường cần thiết.</p>
         </div>
         <Link to="/admin/products">
           <Button variant="outline">Quay lại danh sách</Button>
