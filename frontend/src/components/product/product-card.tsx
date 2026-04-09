@@ -3,6 +3,7 @@ import { toast } from "sonner";
 
 import { buildAffiliateCopyText } from "../../lib/affiliate-copy";
 import { formatCurrency } from "../../lib/format";
+import { copyProductToClipboard } from "../../lib/clipboard";
 import type { Product } from "../../types/entities";
 
 export function ProductCard({ product }: { product: Product }) {
@@ -12,11 +13,17 @@ export function ProductCard({ product }: { product: Product }) {
     }
 
     try {
-      await navigator.clipboard.writeText(buildAffiliateCopyText(product));
-      toast.success("Da copy noi dung affiliate.");
+      const result = await copyProductToClipboard(buildAffiliateCopyText(product), product.thumbnail);
+      if (result === true) {
+        toast.success("Đã copy nội dung và ảnh.");
+      } else if (result === "text-plus-url") {
+        toast.info("Đã copy nội dung + link ảnh (không thể copy ảnh trực tiếp).");
+      } else {
+        toast.success("Đã copy nội dung affiliate.");
+      }
     } catch (error) {
       console.error("Failed to copy affiliate content:", error);
-      toast.error("Khong copy duoc noi dung affiliate.");
+      toast.error("Không thể copy nội dung.");
     }
   }
 

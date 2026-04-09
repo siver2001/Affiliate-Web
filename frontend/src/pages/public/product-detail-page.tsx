@@ -11,6 +11,7 @@ import { Button } from "../../components/ui/button";
 import { buildAffiliateCopyText } from "../../lib/affiliate-copy";
 import { formatCurrency } from "../../lib/format";
 import { getProduct } from "../../services/products";
+import { copyProductToClipboard } from "../../lib/clipboard";
 
 export function ProductDetailPage() {
   const { slug = "" } = useParams();
@@ -21,14 +22,14 @@ export function ProductDetailPage() {
   });
 
   if (productQuery.isLoading) {
-    return <LoadingBlock label="Dang tai chi tiet san pham..." />;
+    return <LoadingBlock label="Đang tải chi tiết sản phẩm..." />;
   }
 
   if (!productQuery.data?.item) {
     return (
       <EmptyState
-        description="Slug san pham khong ton tai hoac API chua tra du lieu."
-        title="Khong tim thay san pham"
+        description="Slug sản phẩm không tồn tại hoặc API chưa trả dữ liệu."
+        title="Không tìm thấy sản phẩm"
       />
     );
   }
@@ -42,11 +43,17 @@ export function ProductDetailPage() {
 
   async function handleCopyAffiliate() {
     try {
-      await navigator.clipboard.writeText(buildAffiliateCopyText(item));
-      toast.success("Da copy noi dung affiliate.");
+      const result = await copyProductToClipboard(buildAffiliateCopyText(item), item.thumbnail);
+      if (result === true) {
+        toast.success("Đã copy nội dung và ảnh.");
+      } else if (result === "text-plus-url") {
+        toast.info("Đã copy nội dung + link ảnh (không thể copy trực tiếp ảnh).");
+      } else {
+        toast.success("Đã copy nội dung affiliate.");
+      }
     } catch (error) {
       console.error("Failed to copy affiliate content:", error);
-      toast.error("Khong copy duoc noi dung affiliate.");
+      toast.error("Không thể copy nội dung.");
     }
   }
 
@@ -74,12 +81,12 @@ export function ProductDetailPage() {
         </div>
 
         <div className="rounded-[2rem] border border-ink/10 bg-white p-8 shadow-soft">
-          <Badge>{item.category?.name ?? "San pham"}</Badge>
+          <Badge>{item.category?.name ?? "Sản phẩm"}</Badge>
           <h1 className="mt-4 font-serif text-4xl leading-tight">{item.name}</h1>
           <p className="mt-4 text-base leading-8 text-ink/70">{item.shortDescription}</p>
 
           <div className="mt-6 rounded-[2rem] bg-canvas p-5">
-            <p className="text-xs uppercase tracking-[0.25em] text-ink/45">Gia tham khao</p>
+            <p className="text-xs uppercase tracking-[0.25em] text-ink/45">Giá tham khảo</p>
             <p className="mt-2 text-2xl font-semibold text-pine">{formatCurrency(item.price)}</p>
           </div>
 
@@ -97,12 +104,12 @@ export function ProductDetailPage() {
                 <a href={item.shopeeUrl} rel="noreferrer" target="_blank">
                   <Button>
                     <ShoppingBag className="mr-2" size={16} />
-                    Mua tren Shopee
+                    Mua trên Shopee
                   </Button>
                 </a>
                 <Button onClick={handleCopyAffiliate} variant="outline">
                   <Copy className="mr-2" size={16} />
-                  Copy noi dung + link
+                  Copy nội dung + link
                 </Button>
               </>
             ) : null}
@@ -113,7 +120,7 @@ export function ProductDetailPage() {
       <section className="space-y-5">
         <div>
           <p className="text-xs uppercase tracking-[0.25em] text-ink/45">Related picks</p>
-          <h2 className="mt-2 font-serif text-3xl">San pham lien quan</h2>
+          <h2 className="mt-2 font-serif text-3xl">Sản phẩm liên quan</h2>
         </div>
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
           {related.map((product) => (
