@@ -15,6 +15,7 @@ import { getCategories } from "../../services/categories";
 import { createProduct, getProducts, updateProduct } from "../../services/products";
 import { uploadImage } from "../../services/uploads";
 import { compressImage } from "../../utils/image-compression";
+import { suggestEnglishTags } from "../../lib/tag-suggestions";
 
 const schema = z.object({
   name: z.string().min(2),
@@ -161,30 +162,11 @@ export function AdminProductFormPage() {
     const name = form.getValues("name");
     const categoryId = form.getValues("categoryId");
 
-    const tags: string[] = [];
-
-    // Mix in category context
     const category = categoriesQuery.data?.find((c) => c.id === categoryId);
-    if (category) {
-      if (category.type === "pets") tags.push("pet");
-      if (category.type === "gadgets") tags.push("đời-sống");
-      tags.push(category.name.toLowerCase().replace(/\s+/g, "-"));
-    }
+    const suggested = suggestEnglishTags(name, category?.type);
 
-    // Basic keyword extraction from name
-    const words = name
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "") // strip diacritics for clean tags
-      .replace(/[^\w\s]/g, "")
-      .split(/\s+/)
-      .filter((w) => w.length > 3 && !["mang", "chinh", "duoc", "dung", "cho"].includes(w));
-
-    tags.push(...words.slice(0, 3));
-
-    const uniqueTags = Array.from(new Set(tags)).filter(Boolean).join(", ");
-    if (uniqueTags) {
-      form.setValue("tagsText", uniqueTags, { shouldDirty: true });
+    if (suggested.length > 0) {
+      form.setValue("tagsText", suggested.join(", "), { shouldDirty: true });
     }
   };
 
