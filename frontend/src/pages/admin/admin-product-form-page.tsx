@@ -14,6 +14,7 @@ import { Textarea } from "../../components/ui/textarea";
 import { getCategories } from "../../services/categories";
 import { createProduct, getProducts, updateProduct } from "../../services/products";
 import { uploadImage } from "../../services/uploads";
+import { compressImage } from "../../utils/image-compression";
 
 const schema = z.object({
   name: z.string().min(2),
@@ -93,8 +94,9 @@ export function AdminProductFormPage() {
       });
       toast.success(`Đã upload ảnh qua ${item.storage} và chèn URL vào danh sách ảnh.`);
     },
-    onError: () => {
-      toast.error("Không upload được ảnh.");
+    onError: (error: any) => {
+      const msg = error?.response?.data?.message || error?.message || "Không upload được ảnh.";
+      toast.error(msg);
     }
   });
 
@@ -224,11 +226,19 @@ export function AdminProductFormPage() {
                   <label className="block text-sm font-medium text-ink/70">Danh sách ảnh</label>
                   <div>
                     <input
+                      accept="image/png, image/jpeg, image/jpg, image/webp"
                       className="hidden"
-                      onChange={(event) => {
+                      onChange={async (event) => {
                         const file = event.target.files?.[0];
                         if (file) {
-                          uploadMutation.mutate(file);
+                          try {
+                            const finalFile = await compressImage(file, 4);
+                            uploadMutation.mutate(finalFile);
+                          } catch (error) {
+                            console.error("Compression error:", error);
+                            // Fallback to original file
+                            uploadMutation.mutate(file);
+                          }
                         }
                         event.currentTarget.value = "";
                       }}

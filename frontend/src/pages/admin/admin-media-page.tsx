@@ -5,6 +5,7 @@ import { toast } from "sonner";
 
 import { Button } from "../../components/ui/button";
 import { uploadImage } from "../../services/uploads";
+import { compressImage } from "../../utils/image-compression";
 
 export function AdminMediaPage() {
   const [uploadedUrl, setUploadedUrl] = useState<string>("");
@@ -15,8 +16,9 @@ export function AdminMediaPage() {
       setUploadedUrl(item.url);
       toast.success(`Upload thành công qua ${item.storage}.`);
     },
-    onError: () => {
-      toast.error("Upload ảnh thất bại.");
+    onError: (error: any) => {
+      const msg = error?.response?.data?.message || error?.message || "Upload ảnh thất bại.";
+      toast.error(msg);
     }
   });
 
@@ -33,12 +35,20 @@ export function AdminMediaPage() {
           <ImagePlus className="text-coral" size={28} />
           <span className="mt-4 text-sm font-medium">Chọn ảnh để upload</span>
           <input
+            accept="image/png, image/jpeg, image/jpg, image/webp"
             className="hidden"
-            onChange={(event) => {
+            onChange={async (event) => {
               const file = event.target.files?.[0];
               if (file) {
-                uploadMutation.mutate(file);
+                try {
+                  const finalFile = await compressImage(file, 4);
+                  uploadMutation.mutate(finalFile);
+                } catch (error) {
+                  console.error("Compression error:", error);
+                  uploadMutation.mutate(file);
+                }
               }
+              event.currentTarget.value = "";
             }}
             type="file"
           />
