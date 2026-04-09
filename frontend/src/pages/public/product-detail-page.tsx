@@ -43,12 +43,8 @@ export function ProductDetailPage() {
 
   async function handleCopyAffiliate() {
     try {
-      const result = await copyProductToClipboard(buildAffiliateCopyText(item), item.thumbnail);
-      if (result === "text-and-image") {
-        toast.success("Đã copy nội dung và ảnh.");
-      } else {
-        toast.success("Đã copy nội dung affiliate.");
-      }
+      await copyProductToClipboard(buildAffiliateCopyText(item), item.thumbnail);
+      toast.success("Đã copy thành công.");
     } catch (error) {
       console.error("Failed to copy affiliate content:", error);
       toast.error("Không thể copy nội dung.");
