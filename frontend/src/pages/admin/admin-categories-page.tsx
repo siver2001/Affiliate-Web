@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { FolderTree, Plus, Sparkles, Trash2 } from "lucide-react";
-import { useMemo } from "react";
+import { FolderTree, Plus, Sparkles, Trash2, Pencil } from "lucide-react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { toast } from "sonner";
@@ -10,7 +10,7 @@ import { LoadingBlock } from "../../components/common/loading-block";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Textarea } from "../../components/ui/textarea";
-import { createCategory, deleteCategory, getCategories } from "../../services/categories";
+import { createCategory, deleteCategory, getCategories, updateCategory } from "../../services/categories";
 import type { Category } from "../../types/entities";
 
 const schema = z.object({
@@ -37,7 +37,7 @@ function normalizePayload(values: FormValues, categories: Category[]) {
 }
 
 function getSectionLabel(type: Category["type"]) {
-  return type === "pets" ? "Thú cưng" : "Mẹo vặt";
+  return type === "pets" ? "Thú cưng" : "Đời sống";
 }
 
 function getSectionAccent(type: Category["type"]) {
@@ -48,6 +48,7 @@ function getSectionAccent(type: Category["type"]) {
 
 export function AdminCategoriesPage() {
   const queryClient = useQueryClient();
+  const [editingId, setEditingId] = useState<string | null>(null);
   const categoriesQuery = useQuery({ queryKey: ["categories"], queryFn: getCategories });
 
   const form = useForm<FormValues>({
@@ -70,6 +71,25 @@ export function AdminCategoriesPage() {
     mutationFn: (values: FormValues) => createCategory(normalizePayload(values, categories)),
     onSuccess: () => {
       toast.success("Đã tạo danh mục.");
+      form.reset({
+        name: "",
+        slug: "",
+        type: "pets",
+        description: "",
+        parentId: ""
+      });
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+    }
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: (values: FormValues) => {
+      if (!editingId) throw new Error("No editing ID");
+      return updateCategory(editingId, normalizePayload(values, categories));
+    },
+    onSuccess: () => {
+      toast.success("Đã cập nhật danh mục.");
+      setEditingId(null);
       form.reset({
         name: "",
         slug: "",
@@ -105,10 +125,6 @@ export function AdminCategoriesPage() {
           <div className="relative">
             <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-ink/40">Category control</p>
             <h1 className="mt-3 font-serif text-4xl text-ink">Quản lý danh mục</h1>
-            <p className="mt-3 max-w-xl text-sm leading-7 text-ink/65">
-              Cây danh mục ở đây điều khiển trực tiếp sidebar ngoài trang public. Bạn chỉ cần tạo nhóm cha và các mục con,
-              không cần nhập cấu trúc thủ công ở nơi khác.
-            </p>
           </div>
         </div>
 
@@ -132,11 +148,17 @@ export function AdminCategoriesPage() {
           <form
             className="mt-6 space-y-4"
             onSubmit={form.handleSubmit((values) => {
-              createMutation.mutate(values);
+              if (editingId) {
+                updateMutation.mutate(values);
+              } else {
+                createMutation.mutate(values);
+              }
             })}
           >
             <div>
-              <label className="mb-2 block text-sm font-medium text-ink/70">Tên danh mục</label>
+              <label className="mb-2 block text-sm font-medium text-ink/70">
+                Tên danh mục {editingId ? "(Đang sửa)" : ""}
+              </label>
               <Input {...form.register("name")} placeholder="Ví dụ: Ăn uống cho mèo" />
               {form.formState.errors.name ? (
                 <p className="mt-2 text-sm text-red-500">{form.formState.errors.name.message}</p>
@@ -152,15 +174,18 @@ export function AdminCategoriesPage() {
               <div>
                 <label className="mb-2 block text-sm font-medium text-ink/70">Nhóm cha</label>
                 <select
-                  className="w-full rounded-2xl border border-ink/10 bg-white px-4 py-3 text-sm"
+                  className="w-full rounded-2xl border border-ink/10 bg-white px-4 py-3 text-sm disabled:opacity-50"
+                  disabled={Boolean(editingId && !rootCategories.find(c => c.id === editingId))}
                   {...form.register("parentId")}
                 >
                   <option value="">Không có, đây là nhóm cha</option>
-                  {rootCategories.map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {category.name}
-                    </option>
-                  ))}
+                  {rootCategories
+                    .filter(c => c.id !== editingId) // Don't allow selecting self as parent
+                    .map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.name}
+                      </option>
+                    ))}
                 </select>
               </div>
             </div>
@@ -174,7 +199,7 @@ export function AdminCategoriesPage() {
                   {...form.register("type")}
                 >
                   <option value="pets">Thú cưng</option>
-                  <option value="gadgets">Mẹo vặt</option>
+                  <option value="gadgets">Đời sống</option>
                 </select>
                 <p className="mt-2 text-xs text-ink/45">
                   {selectedParent
@@ -196,10 +221,29 @@ export function AdminCategoriesPage() {
             ) : null}
 
             <div className="flex flex-wrap gap-3 pt-2">
-              <Button className="justify-center px-6" disabled={createMutation.isPending} type="submit">
-                {createMutation.isPending ? "Đang lưu..." : "Tạo danh mục"}
+              <Button className="justify-center px-6" disabled={createMutation.isPending || updateMutation.isPending} type="submit">
+                {editingId 
+                  ? (updateMutation.isPending ? "Đang lưu..." : "Cập nhật danh mục") 
+                  : (createMutation.isPending ? "Đang lưu..." : "Tạo danh mục")}
               </Button>
-              {selectedParent ? (
+              {editingId ? (
+                <Button
+                  onClick={() => {
+                    setEditingId(null);
+                    form.reset({
+                      name: "",
+                      slug: "",
+                      type: "pets",
+                      description: "",
+                      parentId: ""
+                    });
+                  }}
+                  type="button"
+                  variant="outline"
+                >
+                  Hủy sửa
+                </Button>
+              ) : selectedParent ? (
                 <Button
                   onClick={() => form.setValue("parentId", "")}
                   type="button"
@@ -240,23 +284,41 @@ export function AdminCategoriesPage() {
                     </div>
                     <div className="flex flex-wrap gap-2">
                       <Button
-                        className="rounded-full border-white/15 bg-white/12 text-white hover:bg-white/18"
+                        className="rounded-full bg-white text-ink hover:bg-white/90 border-none px-4"
                         onClick={() => {
                           form.setValue("parentId", root.id);
                           form.setValue("type", root.type);
                           form.setFocus("name");
                         }}
                         type="button"
-                        variant="outline"
+                        variant="ghost"
                       >
                         <Plus className="mr-2" size={16} />
                         Thêm mục con
                       </Button>
                       <Button
-                        className="rounded-full border-white/15 bg-white/12 text-white hover:bg-white/18"
+                        className="rounded-full bg-white text-ink hover:bg-white/90 border-none px-3"
+                        onClick={() => {
+                          setEditingId(root.id);
+                          form.reset({
+                            name: root.name,
+                            slug: root.slug ?? "",
+                            type: root.type,
+                            description: root.description ?? "",
+                            parentId: root.parentId ?? ""
+                          });
+                          window.scrollTo({ top: 0, behavior: "smooth" });
+                        }}
+                        type="button"
+                        variant="ghost"
+                      >
+                        <Pencil size={16} />
+                      </Button>
+                      <Button
+                        className="rounded-full bg-white text-ink hover:bg-white/90 border-none px-3"
                         onClick={() => deleteMutation.mutate(root.id)}
                         type="button"
-                        variant="outline"
+                        variant="ghost"
                       >
                         <Trash2 size={16} />
                       </Button>
@@ -290,6 +352,23 @@ export function AdminCategoriesPage() {
                             <span className="rounded-full bg-canvas px-3 py-1 text-[10px] font-bold uppercase tracking-[0.22em] text-ink/45">
                               {child.productCount ?? 0} SP
                             </span>
+                            <Button
+                              onClick={() => {
+                                setEditingId(child.id);
+                                form.reset({
+                                  name: child.name,
+                                  slug: child.slug ?? "",
+                                  type: child.type,
+                                  description: child.description ?? "",
+                                  parentId: child.parentId ?? ""
+                                });
+                                window.scrollTo({ top: 0, behavior: "smooth" });
+                              }}
+                              type="button"
+                              variant="ghost"
+                            >
+                              <Pencil size={16} />
+                            </Button>
                             <Button onClick={() => deleteMutation.mutate(child.id)} type="button" variant="ghost">
                               <Trash2 size={16} />
                             </Button>

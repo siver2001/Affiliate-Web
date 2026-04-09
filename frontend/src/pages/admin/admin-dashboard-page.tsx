@@ -32,10 +32,6 @@ export function AdminDashboardPage() {
       <div className="rounded-[2rem] border border-ink/10 bg-white p-8 shadow-soft">
         <Badge>Overview</Badge>
         <h1 className="mt-4 font-serif text-4xl">Dashboard quản trị nội dung</h1>
-        <p className="mt-3 max-w-3xl text-sm leading-7 text-ink/70">
-          Khu vực này tập trung vào các chỉ số giúp bạn biết hiện có bao nhiêu sản phẩm, danh
-          mục và nội dung nổi bật đang được đẩy ra ngoài public site.
-        </p>
       </div>
 
       <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">

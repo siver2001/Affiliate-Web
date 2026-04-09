@@ -37,9 +37,6 @@ export function AdminProductsPage() {
       <div className="flex flex-col gap-4 rounded-[2rem] border border-ink/10 bg-white p-6 shadow-soft lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="font-serif text-4xl">Quản lý sản phẩm</h1>
-          <p className="mt-2 text-sm text-ink/70">
-            CRUD sản phẩm, thay link affiliate và quản lý trạng thái publish hoặc featured.
-          </p>
         </div>
         <Link to="/admin/products/new">
           <Button>
