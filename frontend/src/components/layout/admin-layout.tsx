@@ -1,13 +1,13 @@
-import { Copy, FolderTree, LayoutDashboard, LogOut, Package } from "lucide-react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { Copy, FolderTree, LayoutDashboard, LogOut, Package, ExternalLink } from "lucide-react";
+import { NavLink, Outlet, useNavigate, Link } from "react-router-dom";
 
 import { useAuth } from "../../hooks/use-auth";
 import { Button } from "../ui/button";
 
 const items = [
   { to: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/admin/products", label: "San pham", icon: Package },
-  { to: "/admin/categories", label: "Danh muc", icon: FolderTree }
+  { to: "/admin/products", label: "Sản phẩm", icon: Package },
+  { to: "/admin/categories", label: "Danh mục", icon: FolderTree }
 ];
 
 export function AdminLayout() {
@@ -29,7 +29,7 @@ export function AdminLayout() {
 
         <div className="mt-6 rounded-2xl bg-canvas p-4 text-sm text-ink/75">
           <p className="font-medium text-ink">{auth.user?.email ?? "Admin"}</p>
-          <p className="mt-1">Quan ly san pham, danh muc va link affiliate.</p>
+          <p className="mt-1">Quản lý sản phẩm, danh mục và link affiliate.</p>
         </div>
 
         <nav className="mt-6 space-y-2">
@@ -50,6 +50,16 @@ export function AdminLayout() {
               </NavLink>
             );
           })}
+
+          <div className="my-4 h-px bg-ink/5" />
+
+          <Link
+            className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-ink/70 transition hover:bg-canvas"
+            to="/"
+          >
+            <ExternalLink size={18} />
+            Xem trang chính
+          </Link>
         </nav>
 
         <Button
@@ -61,7 +71,7 @@ export function AdminLayout() {
           variant="outline"
         >
           <LogOut className="mr-2" size={16} />
-          Dang xuat
+          Đăng xuất
         </Button>
       </aside>
 

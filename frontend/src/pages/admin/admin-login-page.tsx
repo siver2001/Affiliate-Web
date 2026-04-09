@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { LockKeyhole, Sparkles } from "lucide-react";
@@ -30,6 +31,12 @@ export function AdminLoginPage() {
   const form = useForm<FormValues>({
     resolver: zodResolver(schema)
   });
+
+  useEffect(() => {
+    if (auth.isAuthenticated) {
+      navigate("/admin/dashboard");
+    }
+  }, [auth.isAuthenticated, navigate]);
 
   const loginMutation = useMutation({
     mutationFn: login,
