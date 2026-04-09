@@ -184,7 +184,7 @@ export function AdminProductFormPage() {
             </div>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2">
             <div>
               <label className="mb-2 block text-sm font-medium text-ink/70">Danh mục</label>
               <select
@@ -202,10 +202,6 @@ export function AdminProductFormPage() {
             <div>
               <label className="mb-2 block text-sm font-medium text-ink/70">Giá tham khảo</label>
               <Input {...form.register("price")} placeholder="259000" />
-            </div>
-            <div>
-              <label className="mb-2 block text-sm font-medium text-ink/70">Thứ tự sắp xếp</label>
-              <Input {...form.register("sortOrder", { valueAsNumber: true })} type="number" />
             </div>
           </div>
 

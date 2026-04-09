@@ -63,16 +63,15 @@ export function AdminProductsPage() {
       </form>
 
       <div className="overflow-hidden rounded-[2rem] border border-ink/10 bg-white shadow-soft">
-        <div className="grid grid-cols-[1.4fr,0.9fr,0.7fr,0.6fr,0.7fr] gap-4 border-b border-ink/10 px-6 py-4 text-xs font-semibold uppercase tracking-[0.25em] text-ink/45">
+        <div className="grid grid-cols-[1.4fr,0.9fr,0.7fr,0.7fr] gap-4 border-b border-ink/10 px-6 py-4 text-xs font-semibold uppercase tracking-[0.25em] text-ink/45">
           <span>Sản phẩm</span>
           <span>Danh mục</span>
           <span>Trạng thái</span>
-          <span>Ưu tiên</span>
           <span>Hành động</span>
         </div>
         {(productsQuery.data?.items ?? []).map((product) => (
           <div
-            className="grid grid-cols-[1.4fr,0.9fr,0.7fr,0.6fr,0.7fr] gap-4 border-b border-ink/8 px-6 py-5 last:border-b-0"
+            className="grid grid-cols-[1.4fr,0.9fr,0.7fr,0.7fr] gap-4 border-b border-ink/8 px-6 py-5 last:border-b-0"
             key={product.id}
           >
             <div className="min-w-0">
@@ -84,7 +83,6 @@ export function AdminProductsPage() {
               <Badge>{product.isPublished ? "Published" : "Draft"}</Badge>
               {product.isFeatured ? <Badge className="bg-coral/10 text-coral">Featured</Badge> : null}
             </div>
-            <p className="text-sm text-ink/70">{product.sortOrder}</p>
             <div className="flex items-center gap-2">
               <Link to={`/admin/products/${product.id}/edit`}>
                 <Button variant="outline">Sửa</Button>

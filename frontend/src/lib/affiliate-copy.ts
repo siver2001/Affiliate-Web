@@ -5,7 +5,7 @@ function getAffiliateIntro(product: Product) {
 }
 
 export function buildAffiliateCopyText(product: Product) {
-  const lines = [product.name.trim(), getAffiliateIntro(product)];
+  const lines = [getAffiliateIntro(product)];
 
   if (product.shopeeUrl) {
     lines.push(product.shopeeUrl);
