@@ -91,10 +91,10 @@ export function AdminProductFormPage() {
         shouldDirty: true,
         shouldTouch: true
       });
-      toast.success(`Da upload anh qua ${item.storage} va chen URL vao danh sach anh.`);
+      toast.success(`Đã upload ảnh qua ${item.storage} và chèn URL vào danh sách ảnh.`);
     },
     onError: () => {
-      toast.error("Khong upload duoc anh.");
+      toast.error("Không upload được ảnh.");
     }
   });
 
@@ -142,29 +142,29 @@ export function AdminProductFormPage() {
       return createProduct(payload);
     },
     onSuccess: () => {
-      toast.success(id ? "Da cap nhat san pham." : "Da tao san pham.");
+      toast.success(id ? "Đã cập nhật sản phẩm." : "Đã tạo sản phẩm.");
       queryClient.invalidateQueries({ queryKey: ["admin-products"] });
       queryClient.invalidateQueries({ queryKey: ["products"] });
       navigate("/admin/products");
     },
     onError: () => {
-      toast.error("Khong luu duoc san pham.");
+      toast.error("Không lưu được sản phẩm.");
     }
   });
 
   if (categoriesQuery.isLoading || productsQuery.isLoading) {
-    return <LoadingBlock label="Dang chuan bi form..." />;
+    return <LoadingBlock label="Đang chuẩn bị form..." />;
   }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between rounded-[2rem] border border-ink/10 bg-white p-6 shadow-soft">
         <div>
-          <h1 className="font-serif text-4xl">{id ? "Chinh sua san pham" : "Tao san pham moi"}</h1>
-          <p className="mt-2 text-sm text-ink/70">Form da duoc rut gon chi giu cac truong can thiet.</p>
+          <h1 className="font-serif text-4xl">{id ? "Chỉnh sửa sản phẩm" : "Tạo sản phẩm mới"}</h1>
+          <p className="mt-2 text-sm text-ink/70">Form đã được rút gọn chỉ giữ các trường cần thiết.</p>
         </div>
         <Link to="/admin/products">
-          <Button variant="outline">Quay lai danh sach</Button>
+          <Button variant="outline">Quay lại danh sách</Button>
         </Link>
       </div>
 
@@ -175,23 +175,23 @@ export function AdminProductFormPage() {
         <section className="space-y-6 rounded-[2rem] border border-ink/10 bg-white p-6 shadow-soft">
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className="mb-2 block text-sm font-medium text-ink/70">Ten san pham</label>
+              <label className="mb-2 block text-sm font-medium text-ink/70">Tên sản phẩm</label>
               <Input {...form.register("name")} />
             </div>
             <div>
               <label className="mb-2 block text-sm font-medium text-ink/70">Slug</label>
-              <Input {...form.register("slug")} placeholder="De trong de backend tu sinh" />
+              <Input {...form.register("slug")} placeholder="Để trống để backend tự sinh" />
             </div>
           </div>
 
           <div className="grid gap-4 md:grid-cols-3">
             <div>
-              <label className="mb-2 block text-sm font-medium text-ink/70">Danh muc</label>
+              <label className="mb-2 block text-sm font-medium text-ink/70">Danh mục</label>
               <select
                 className="w-full rounded-2xl border border-ink/10 bg-white px-4 py-3 text-sm"
                 {...form.register("categoryId")}
               >
-                <option value="">Chon danh muc</option>
+                <option value="">Chọn danh mục</option>
                 {categoriesQuery.data?.map((category) => (
                   <option key={category.id} value={category.id}>
                     {category.name}
@@ -200,24 +200,24 @@ export function AdminProductFormPage() {
               </select>
             </div>
             <div>
-              <label className="mb-2 block text-sm font-medium text-ink/70">Gia tham khao</label>
+              <label className="mb-2 block text-sm font-medium text-ink/70">Giá tham khảo</label>
               <Input {...form.register("price")} placeholder="259000" />
             </div>
             <div>
-              <label className="mb-2 block text-sm font-medium text-ink/70">Sort order</label>
+              <label className="mb-2 block text-sm font-medium text-ink/70">Thứ tự sắp xếp</label>
               <Input {...form.register("sortOrder", { valueAsNumber: true })} type="number" />
             </div>
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-ink/70">Mo ta ngan</label>
+            <label className="mb-2 block text-sm font-medium text-ink/70">Mô tả ngắn</label>
             <Textarea {...form.register("shortDescription")} />
           </div>
         </section>
 
         <section className="space-y-6">
           <div className="rounded-[2rem] border border-ink/10 bg-white p-6 shadow-soft">
-            <h2 className="font-serif text-3xl">Affiliate va media</h2>
+            <h2 className="font-serif text-3xl">Affiliate và media</h2>
             <div className="mt-5 space-y-4">
               <div>
                 <label className="mb-2 block text-sm font-medium text-ink/70">Shopee URL</label>
@@ -225,7 +225,7 @@ export function AdminProductFormPage() {
               </div>
               <div>
                 <div className="mb-2 flex items-center justify-between gap-3">
-                  <label className="block text-sm font-medium text-ink/70">Danh sach anh</label>
+                  <label className="block text-sm font-medium text-ink/70">Danh sách ảnh</label>
                   <div>
                     <input
                       className="hidden"
@@ -247,12 +247,12 @@ export function AdminProductFormPage() {
                       variant="outline"
                     >
                       <ImagePlus className="mr-2" size={14} />
-                      {uploadMutation.isPending ? "Dang upload..." : "Upload anh"}
+                      {uploadMutation.isPending ? "Đang upload..." : "Upload ảnh"}
                     </Button>
                   </div>
                 </div>
-                <Textarea {...form.register("imagesText")} placeholder="Moi dong mot URL anh" />
-                <p className="mt-2 text-xs text-ink/50">Co the dan URL san co hoac bam Upload anh de chen tu dong.</p>
+                <Textarea {...form.register("imagesText")} placeholder="Mỗi dòng một URL ảnh" />
+                <p className="mt-2 text-xs text-ink/50">Có thể dán URL sẵn có hoặc bấm Upload ảnh để chèn tự động.</p>
               </div>
               <div>
                 <label className="mb-2 block text-sm font-medium text-ink/70">Tags</label>
@@ -272,7 +272,7 @@ export function AdminProductFormPage() {
           </div>
 
           <Button className="w-full justify-center" disabled={mutation.isPending} type="submit">
-            {mutation.isPending ? "Dang luu..." : id ? "Cap nhat san pham" : "Tao san pham"}
+            {mutation.isPending ? "Đang lưu..." : id ? "Cập nhật sản phẩm" : "Tạo sản phẩm"}
           </Button>
         </section>
       </form>
